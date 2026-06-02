@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Travelism AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f7; --bg3: #ebebf0;
+    --text: #1c1c1e; --text2: #636366; --text3: #aeaeb2;
+    --accent: #007AFF; --success: #34C759; --warning: #FF9500;
+    --danger: #FF3B30; --border: rgba(0,0,0,0.1);
+    --card: #ffffff; --radius: 16px; --radius-sm: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000; --bg2: #1c1c1e; --bg3: #2c2c2e;
+      --text: #ffffff; --text2: #ebebf5cc; --text3: #636366;
+      --border: rgba(255,255,255,0.1); --card: #1c1c1e;
+    }
+  }
+  body { font-family: -apple-system, 'SF Pro Display', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .tg-mode { background: var(--tg-theme-bg-color, var(--bg)) !important; color: var(--tg-theme-text-color, var(--text)) !important; }
+
+  /* NAV */
+  .nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 0.5px solid var(--border); padding: 8px 0 max(8px, env(safe-area-inset-bottom)); z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px; cursor: pointer; border: none; background: none; color: var(--text3); transition: color .15s; }
+  .nav-item.active { color: var(--accent); }
+  .nav-item svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-item span { font-size: 10px; font-weight: 500; }
+
+  /* PAGES */
+  .page { display: none; padding: 16px 16px calc(80px + env(safe-area-inset-bottom)); min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* HEADER */
+  .header { padding: 16px 0 8px; display: flex; align-items: center; justify-content: space-between; }
+  .header-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-sub { font-size: 14px; color: var(--text2); margin-top: 2px; }
+
+  /* AVATAR */
+  .avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: white; margin: 0 auto 12px; }
+
+  /* CARDS */
+  .card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 0.5px solid var(--border); }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+  /* PROFILE */
+  .profile-center { text-align: center; padding: 24px 0 16px; }
+  .profile-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .profile-level { font-size: 14px; color: var(--text2); margin-bottom: 16px; }
+  .level-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #667eea22, #764ba222); border: 1px solid #667eea44; border-radius: 20px; padding: 6px 14px; font-size: 14px; font-weight: 600; color: #667eea; }
+
+  /* STATS GRID */
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .stat { background: var(--card); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; border: 0.5px solid var(--border); }
+  .stat-val { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .stat-lab { font-size: 11px; color: var(--text2); }
+
+  /* SUITCASE */
+  .suitcase-wrap { padding: 4px 0 8px; }
+  .suitcase-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .suitcase-label { font-size: 15px; font-weight: 600; }
+  .suitcase-pct { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .suitcase-bar { height: 10px; background: var(--bg3); border-radius: 5px; overflow: hidden; margin-bottom: 16px; }
+  .suitcase-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--accent), #5ac8fa); transition: width .6s ease; }
+  .suitcase-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .suitcase-step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .step-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; border: 2px solid transparent; transition: all .2s; }
+  .step-icon.done { background: #007AFF11; border-color: var(--accent); }
+  .step-lab { font-size: 9px; color: var(--text2); text-align: center; line-height: 1.2; }
+
+  /* TRIP CARD */
+  .trip-card { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 0.5px solid var(--border); }
+  .trip-card:last-child { border-bottom: none; }
+  .trip-flag { font-size: 32px; }
+  .trip-info { flex: 1; }
+  .trip-dest { font-size: 16px; font-weight: 600; }
+  .trip-date { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .trip-badge { font-size: 12px; padding: 3px 8px; border-radius: 8px; background: var(--bg3); color: var(--text2); }
+
+  /* BUTTON */
+  .btn { width: 100%; padding: 15px; border-radius: var(--radius-sm); border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity .15s; margin-bottom: 10px; }
+  .btn:active { opacity: 0.8; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: var(--bg3); color: var(--text); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-tg { background: #229ED9; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  /* INPUT */
+  .input-group { margin-bottom: 14px; }
+  .input-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; }
+  .input { width: 100%; padding: 13px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: 15px; outline: none; transition: border-color .15s; }
+  .input:focus { border-color: var(--accent); }
+  select.input { appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23636366' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  /* EVENTS */
+  .event-item { padding: 14px 0; border-bottom: 0.5px solid var(--border); }
+  .event-item:last-child { border-bottom: none; }
+  .event-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .event-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
+  .event-price { font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .event-price.free { color: var(--success); }
+  .event-price.paid { color: var(--accent); }
+  .event-desc { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .event-tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--bg3); color: var(--text2); margin-top: 6px; margin-right: 4px; }
+
+  /* BUSINESS */
+  .biz-card { border-radius: var(--radius); border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 12px; background: var(--card); }
+  .biz-img { width: 100%; height: 140px; background: linear-gradient(135deg, #667eea33, #764ba233); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+  .biz-body { padding: 14px; }
+  .biz-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .biz-type { font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .biz-stars { color: #FF9500; font-size: 14px; margin-bottom: 10px; }
+  .biz-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .biz-btn { padding: 10px; border-radius: var(--radius-sm); border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .biz-btn-call { background: var(--success); color: white; }
+  .biz-btn-map  { background: var(--accent); color: white; }
+
+  /* CONTACT */
+  .contact-card { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: var(--radius); padding: 24px; color: white; margin-bottom: 12px; text-align: center; }
+  .contact-logo { font-size: 48px; margin-bottom: 12px; }
+  .contact-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .contact-sub { font-size: 14px; opacity: 0.85; margin-bottom: 20px; line-height: 1.5; }
+  .contact-btn { background: white; color: #667eea; padding: 14px; border-radius: var(--radius-sm); border: none; width: 100%; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 8px; }
+  .contact-btn-outline { background: transparent; color: white; border: 2px solid rgba(255,255,255,0.5); padding: 13px; border-radius: var(--radius-sm); width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body class="tg-mode">
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <button class="nav-item active" onclick="showPage('profile')" id="nav-profile">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    <span id="nl-profile">Профиль</span>
+  </button>
+  <button class="nav-item" onclick="showPage('trips')" id="nav-trips">
+    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+    <span id="nl-trips">Поездки</span>
+  </button>
+  <button class="nav-item" onclick="showPage('events')" id="nav-events">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span id="nl-events">События</span>
+  </button>
+  <button class="nav-item" onclick="showPage('places')" id="nav-places">
+    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    <span id="nl-places">Места</span>
+  </button>
+  <button class="nav-item" onclick="showPage('contact')" id="nav-contact">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span id="nl-contact">Связь</span>
+  </button>
+</nav>
+
+<!-- PAGE: PROFILE -->
+<div id="page-profile" class="page active">
+  <div class="profile-center">
+    <div class="avatar" id="avatar-initials">🌍</div>
+    <div class="profile-name" id="profile-name">Путешественник</div>
+    <div class="profile-level" id="profile-citizenship">Гражданство не указано</div>
+    <div class="level-badge" id="level-badge">🌱 Новичок</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="stat-pts">0</div>
+      <div class="stat-lab">XP баллов</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="stat-trips">0</div>
+      <div class="stat-lab">Поездок</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="stat-countries">0</div>
+      <div class="stat-lab">Стран</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧳 Чемодан готовности</div>
+    <div class="suitcase-wrap">
+      <div class="suitcase-header">
+        <span class="suitcase-label">Текущая поездка</span>
+        <span class="suitcase-pct" id="suitcase-pct">0%</span>
+      </div>
+      <div class="suitcase-bar">
+        <div class="suitcase-fill" id="suitcase-fill" style="width:0%"></div>
+      </div>
+      <div class="suitcase-steps">
+        <div class="suitcase-step">
+          <div class="step-icon" id="step-visa">🛂</div>
+          <div class="step-lab">Виза</div>
+        </div>
+        <div class="suitcase-step">
+          <div class="step-icon" id="step-flight">✈️</div>
+          <div class="step-lab">Билет</div>
+        </div>
+        <div class="suitcase-step">
+          <div class="step-icon" id="step-hotel">🏨</div>
+          <div class="step-lab">Отель</div>
+        </div>
+        <div class="suitcase-step">
+          <div class="step-icon" id="step-pack">🎒</div>
+          <div class="step-lab">Сумка</div>
+        </div>
+        <div class="suitcase-step">
+          <div class="step-icon" id="step-ins">🛡</div>
+          <div class="step-lab">Страховка</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ Мой профиль</div>
+    <div class="input-group">
+      <label class="input-label" id="lbl-name">Ваше имя</label>
+      <input class="input" id="inp-name" type="text" placeholder="Введите имя">
+    </div>
+    <div class="input-group">
+      <label class="input-label" id="lbl-cit">Гражданство</label>
+      <select class="input" id="inp-cit">
+        <option value="">Выберите страну</option>
+        <option value="Kyrgyzstan">🇰🇬 Кыргызстан</option>
+        <option value="Kazakhstan">🇰🇿 Казахстан</option>
+        <option value="Uzbekistan">🇺🇿 Узбекистан</option>
+        <option value="Tajikistan">🇹🇯 Таджикистан</option>
+        <option value="Russia">🇷🇺 Россия</option>
+        <option value="Ukraine">🇺🇦 Украина</option>
+        <option value="Belarus">🇧🇾 Беларусь</option>
+        <option value="Azerbaijan">🇦🇿 Азербайджан</option>
+        <option value="Georgia">🇬🇪 Грузия</option>
+        <option value="Armenia">🇦🇲 Армения</option>
+        <option value="Turkey">🇹🇷 Турция</option>
+        <option value="UAE">🇦🇪 ОАЭ</option>
+        <option value="Saudi Arabia">🇸🇦 Саудовская Аравия</option>
+        <option value="China">🇨🇳 Китай</option>
+        <option value="South Korea">🇰🇷 Южная Корея</option>
+        <option value="India">🇮🇳 Индия</option>
+        <option value="Pakistan">🇵🇰 Пакистан</option>
+        <option value="Germany">🇩🇪 Германия</option>
+        <option value="United Kingdom">🇬🇧 Великобритания</option>
+        <option value="USA">🇺🇸 США</option>
+        <option value="Mongolia">🇲🇳 Монголия</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label class="input-label" id="lbl-city">Город вылета (можно менять)</label>
+      <input class="input" id="inp-city" type="text" placeholder="Бишкек / Алматы / Ташкент...">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Язык интерфейса</label>
+      <select class="input" id="inp-lang" onchange="setLang(this.value)">
+        <option value="ru">🇷🇺 Русский</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="kk">🇰🇿 Қазақша</option>
+        <option value="uz">🇺🇿 O'zbekcha</option>
+        <option value="ky">🇰🇬 Кыргызча</option>
+        <option value="tg">🇹🇯 Тоҷикӣ</option>
+        <option value="tr">🇹🇷 Türkçe</option>
+        <option value="az">🇦🇿 Azərbaycan</option>
+        <option value="mn">🇲🇳 Монгол</option>
+        <option value="ko">🇰🇷 한국어</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="zh">🇨🇳 中文</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="saveProfile()" id="btn-save">💾 Сохранить профиль</button>
+  </div>
+</div>
+
+<!-- PAGE: TRIPS -->
+<div id="page-trips" class="page">
+  <div class="header">
+    <div>
+      <div class="header-title" id="h-trips">Мои поездки</div>
+      <div class="header-sub" id="h-trips-sub">История и планы</div>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="newTrip()" id="btn-new-trip">✈️ Новая поездка в боте</button>
+  <div class="card" id="trips-list">
+    <div id="no-trips" style="text-align:center;padding:24px;color:var(--text2)">
+      <div style="font-size:48px;margin-bottom:12px">✈️</div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:6px" id="no-trips-title">Поездок пока нет</div>
+      <div style="font-size:14px" id="no-trips-sub">Напишите маршрут в боте и он появится здесь</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: EVENTS -->
+<div id="page-events" class="page">
+  <div class="header">
+    <div>
+      <div class="header-title" id="h-events">События</div>
+      <div class="header-sub" id="h-events-sub">Для вашей поездки</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="input-group" style="margin-bottom:0">
+      <select class="input" id="events-city" onchange="loadEvents()">
+        <option value="seoul">🇰🇷 Сеул</option>
+        <option value="dubai">🇦🇪 Дубай</option>
+        <option value="istanbul">🇹🇷 Стамбул</option>
+        <option value="tokyo">🇯🇵 Токио</option>
+        <option value="bangkok">🇹🇭 Бангкок</option>
+        <option value="paris">🇫🇷 Париж</option>
+        <option value="bali">🇮🇩 Бали</option>
+        <option value="georgia">🇬🇪 Тбилиси</option>
+      </select>
+    </div>
+  </div>
+  <div class="card" id="events-list"></div>
+</div>
+
+<!-- PAGE: PLACES -->
+<div id="page-places" class="page">
+  <div class="header">
+    <div>
+      <div class="header-title" id="h-places">Места</div>
+      <div class="header-sub" id="h-places-sub">Добавьте своё заведение</div>
+    </div>
+  </div>
+  <button class="btn btn-success" onclick="addPlace()" id="btn-add-place">➕ Добавить кафе / отель / гид</button>
+  <div id="places-list"></div>
+</div>
+
+<!-- PAGE: CONTACT -->
+<div id="page-contact" class="page">
+  <div class="contact-card">
+    <div class="contact-logo">✈️</div>
+    <div class="contact-title">Travelism AI</div>
+    <div class="contact-sub" id="contact-sub">Международный AI travel-консьерж. Сотрудничество, партнёрство и предложения — пишите нам.</div>
+    <button class="contact-btn" onclick="openTelegram('travelismofficial')" id="btn-partnership">💬 Сотрудничество в Telegram</button>
+    <button class="contact-btn-outline" onclick="openBot()" id="btn-open-bot">🤖 Открыть бота</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="ct-feedback">Обратная связь</div>
+    <div class="input-group">
+      <label class="input-label" id="lbl-feedback">Ваше сообщение</label>
+      <textarea class="input" id="inp-feedback" rows="4" placeholder="Предложение, отзыв или вопрос..."></textarea>
+    </div>
+    <button class="btn btn-primary" onclick="sendFeedback()" id="btn-send-feedback">Отправить</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">B2B</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:12px" id="b2b-desc">Турагентства, отели, гиды — подключитесь к нашей платформе</div>
+    <button class="btn btn-secondary" onclick="openTelegram('travelismofficial')" id="btn-b2b">Партнёрство B2B →</button>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp
+if (tg) { tg.ready(); tg.expand() }
+
+const userId = tg?.initDataUnsafe?.user?.id || 'demo'
+const userName = tg?.initDataUnsafe?.user?.first_name || ''
+
+const LANGS = {
+  ru:{profile:'Профиль',trips:'Поездки',events:'События',places:'Места',contact:'Связь',save:'💾 Сохранить профиль',newTrip:'✈️ Новая поездка в боте',addPlace:'➕ Добавить кафе / отель / гид',noTrips:'Поездок пока нет',noTripsSub:'Напишите маршрут в боте',partnership:'💬 Сотрудничество в Telegram',openBot:'🤖 Открыть бота',sendFeedback:'Отправить',name:'Ваше имя',citizenship:'Гражданство',city:'Город вылета',lang:'Язык',hTrips:'Мои поездки',hTripsSub:'История и планы',hEvents:'События',hEventsSub:'Для вашей поездки',hPlaces:'Места',hPlacesSub:'Добавьте своё заведение',b2b:'Партнёрство B2B →',b2bDesc:'Турагентства, отели, гиды — подключитесь',feedback:'Обратная связь',feedbackPh:'Предложение, отзыв или вопрос...'},
+  en:{profile:'Profile',trips:'Trips',events:'Events',places:'Places',contact:'Contact',save:'💾 Save Profile',newTrip:'✈️ New Trip in Bot',addPlace:'➕ Add Cafe / Hotel / Guide',noTrips:'No trips yet',noTripsSub:'Write a route in the bot',partnership:'💬 Partnership on Telegram',openBot:'🤖 Open Bot',sendFeedback:'Send',name:'Your name',citizenship:'Citizenship',city:'Departure city',lang:'Language',hTrips:'My Trips',hTripsSub:'History and plans',hEvents:'Events',hEventsSub:'For your trip',hPlaces:'Places',hPlacesSub:'Add your venue',b2b:'B2B Partnership →',b2bDesc:'Travel agencies, hotels, guides — join us',feedback:'Feedback',feedbackPh:'Suggestion, review or question...'},
+  kk:{profile:'Профиль',trips:'Сапарлар',events:'Іс-шаралар',places:'Орындар',contact:'Байланыс',save:'💾 Сақтау',newTrip:'✈️ Жаңа сапар',addPlace:'➕ Қосу',noTrips:'Сапарлар жоқ',noTripsSub:'Ботта бағыт жазыңыз',partnership:'💬 Telegram арқылы',openBot:'🤖 Ботты ашу',sendFeedback:'Жіберу',name:'Атыңыз',citizenship:'Азаматтық',city:'Ұшу қаласы',lang:'Тіл',hTrips:'Менің сапарларым',hTripsSub:'Тарих',hEvents:'Іс-шаралар',hEventsSub:'Сапарыңыз үшін',hPlaces:'Орындар',hPlacesSub:'Өз мекемеңізді қосыңыз',b2b:'B2B →',b2bDesc:'Турагенттіктер, қонақүйлер',feedback:'Кері байланыс',feedbackPh:'Ұсыныс немесе сұрақ...'},
+  uz:{profile:'Profil',trips:'Sayohatlar',events:'Tadbirlar',places:'Joylar',contact:'Aloqa',save:'💾 Saqlash',newTrip:'✈️ Yangi sayohat',addPlace:'➕ Qo\'shish',noTrips:'Sayohatlar yo\'q',noTripsSub:'Botda marshrutingizni yozing',partnership:'💬 Telegram orqali',openBot:'🤖 Botni ochish',sendFeedback:'Yuborish',name:'Ismingiz',citizenship:'Fuqarolik',city:'Uchish shahri',lang:'Til',hTrips:'Mening sayohatlarim',hTripsSub:'Tarix',hEvents:'Tadbirlar',hEventsSub:'Sayohatingiz uchun',hPlaces:'Joylar',hPlacesSub:'O\'z muassasangizni qo\'shing',b2b:'B2B →',b2bDesc:'Turagentliklar, mehmonxonalar',feedback:'Fikr-mulohaza',feedbackPh:'Taklif yoki savol...'},
+  ky:{profile:'Профиль',trips:'Сапарлар',events:'Иш-чаралар',places:'Жерлер',contact:'Байланыш',save:'💾 Сактоо',newTrip:'✈️ Жаңы сапар',addPlace:'➕ Кошуу',noTrips:'Сапарлар жок',noTripsSub:'Ботто багыт жазыңыз',partnership:'💬 Telegram аркылуу',openBot:'🤖 Ботту ачуу',sendFeedback:'Жиберүү',name:'Атыңыз',citizenship:'Жарандык',city:'Учуу шаары',lang:'Тил',hTrips:'Менин сапарларым',hTripsSub:'Тарых',hEvents:'Иш-чаралар',hEventsSub:'Сапарыңыз үчүн',hPlaces:'Жерлер',hPlacesSub:'Өз мекемеңизди кошуңуз',b2b:'B2B →',b2bDesc:'Турагенттиктер, мейманканалар',feedback:'Пикир',feedbackPh:'Сунуш же суроо...'},
+  tr:{profile:'Profil',trips:'Seyahatler',events:'Etkinlikler',places:'Yerler',contact:'İletişim',save:'💾 Kaydet',newTrip:'✈️ Yeni Seyahat',addPlace:'➕ Ekle',noTrips:'Henüz seyahat yok',noTripsSub:'Botta bir güzergah yazın',partnership:'💬 Telegram\'da',openBot:'🤖 Botu Aç',sendFeedback:'Gönder',name:'Adınız',citizenship:'Vatandaşlık',city:'Kalkış şehri',lang:'Dil',hTrips:'Seyahatlerim',hTripsSub:'Geçmiş',hEvents:'Etkinlikler',hEventsSub:'Seyahatiniz için',hPlaces:'Yerler',hPlacesSub:'İşletmenizi ekleyin',b2b:'B2B →',b2bDesc:'Seyahat acenteleri, oteller',feedback:'Geri Bildirim',feedbackPh:'Öneri veya soru...'},
+  ko:{profile:'프로필',trips:'여행',events:'이벤트',places:'장소',contact:'문의',save:'💾 저장',newTrip:'✈️ 새 여행',addPlace:'➕ 장소 추가',noTrips:'여행 없음',noTripsSub:'봇에서 경로를 입력하세요',partnership:'💬 텔레그램 파트너십',openBot:'🤖 봇 열기',sendFeedback:'보내기',name:'이름',citizenship:'국적',city:'출발 도시',lang:'언어',hTrips:'내 여행',hTripsSub:'기록',hEvents:'이벤트',hEventsSub:'여행을 위한',hPlaces:'장소',hPlacesSub:'장소 추가',b2b:'B2B →',b2bDesc:'여행사, 호텔, 가이드',feedback:'피드백',feedbackPh:'제안 또는 질문...'},
+  ar:{profile:'الملف',trips:'الرحلات',events:'الفعاليات',places:'الأماكن',contact:'التواصل',save:'💾 حفظ',newTrip:'✈️ رحلة جديدة',addPlace:'➕ إضافة مكان',noTrips:'لا توجد رحلات',noTripsSub:'اكتب المسار في البوت',partnership:'💬 تلغرام',openBot:'🤖 فتح البوت',sendFeedback:'إرسال',name:'اسمك',citizenship:'الجنسية',city:'مدينة المغادرة',lang:'اللغة',hTrips:'رحلاتي',hTripsSub:'التاريخ',hEvents:'الفعاليات',hEventsSub:'لرحلتك',hPlaces:'الأماكن',hPlacesSub:'أضف مشروعك',b2b:'B2B →',b2bDesc:'وكالات سفر، فنادق، مرشدون',feedback:'ملاحظات',feedbackPh:'اقتراح أو سؤال...'},
+  de:{profile:'Profil',trips:'Reisen',events:'Events',places:'Orte',contact:'Kontakt',save:'💾 Speichern',newTrip:'✈️ Neue Reise',addPlace:'➕ Hinzufügen',noTrips:'Noch keine Reisen',noTripsSub:'Route im Bot eingeben',partnership:'💬 Telegram Kontakt',openBot:'🤖 Bot öffnen',sendFeedback:'Senden',name:'Ihr Name',citizenship:'Staatsbürgerschaft',city:'Abflugstadt',lang:'Sprache',hTrips:'Meine Reisen',hTripsSub:'Verlauf',hEvents:'Events',hEventsSub:'Für Ihre Reise',hPlaces:'Orte',hPlacesSub:'Betrieb hinzufügen',b2b:'B2B →',b2bDesc:'Reisebüros, Hotels, Guides',feedback:'Feedback',feedbackPh:'Vorschlag oder Frage...'},
+  zh:{profile:'个人资料',trips:'旅行',events:'活动',places:'地点',contact:'联系',save:'💾 保存',newTrip:'✈️ 新旅行',addPlace:'➕ 添加地点',noTrips:'暂无旅行',noTripsSub:'在机器人中输入路线',partnership:'💬 Telegram合作',openBot:'🤖 打开机器人',sendFeedback:'发送',name:'您的姓名',citizenship:'国籍',city:'出发城市',lang:'语言',hTrips:'我的旅行',hTripsSub:'历史',hEvents:'活动',hEventsSub:'您的旅行',hPlaces:'地点',hPlacesSub:'添加您的场所',b2b:'B2B →',b2bDesc:'旅行社、酒店、导游',feedback:'反馈',feedbackPh:'建议或问题...'},
+}
+
+let lang = localStorage.getItem('travelism_lang') || 'ru'
+let profile = JSON.parse(localStorage.getItem('travelism_profile') || '{}')
+
+const EVENTS_DB = {
+  seoul:[
+    {name:'경복궁 (Кёнбоккун)',desc:'Главный дворец династии Чосон. Смена стражи в 10:00 и 14:00.',price:'₩3,000',free:false,tag:'Культура'},
+    {name:'Namsan Seoul Tower',desc:'Панорама города с высоты 480м. Замки влюблённых.',price:'₩16,000',free:false,tag:'Достопримечательность'},
+    {name:'Myeongdong Shopping',desc:'Крупнейший торговый район. Уличная еда: Tteokbokki, Hotteok.',price:'Бесплатно',free:true,tag:'Шоппинг'},
+    {name:'Han River Park',desc:'Пикник у реки, велопрокат, закат. Популярно у местных.',price:'Бесплатно',free:true,tag:'Природа'},
+    {name:'Bukchon Hanok Village',desc:'Традиционные корейские дома. Лучший ракурс для фото.',price:'Бесплатно',free:true,tag:'Культура'},
+    {name:'Insadong Art Market',desc:'Антиквариат, хэнмэйд, корейский чай. По выходным.',price:'Бесплатно',free:true,tag:'Искусство'},
+    {name:'Everland Theme Park',desc:'Крупнейший парк аттракционов Кореи. T-Express — топ-10 мира.',price:'₩62,000',free:false,tag:'Развлечения'},
+    {name:'DMZ Tour',desc:'Экскурсия к границе Северной Кореи. 3-й тоннель, Пханмунджом.',price:'₩50,000',free:false,tag:'История'},
+    {name:'Hongdae Night Market',desc:'Молодёжный район. Стрит-арт, живая музыка, еда.',price:'Бесплатно',free:true,tag:'Ночная жизнь'},
+    {name:'Seoul Museum of History',desc:'6000 лет истории Сеула. Вход свободный.',price:'Бесплатно',free:true,tag:'Музей'},
+  ],
+  dubai:[
+    {name:'Burj Khalifa (124 этаж)',desc:'Самое высокое здание мира. Закат — лучшее время.',price:'$35',free:false,tag:'Достопримечательность'},
+    {name:'Dubai Mall + Фонтан',desc:'Крупнейший молл мира. Шоу фонтана каждый час.',price:'Бесплатно',free:true,tag:'Шоппинг'},
+    {name:'Старый Дубай / Gold Souk',desc:'Золотые рынки, специи. Прогулка на абра (лодке) за 1 дирхам.',price:'1 AED',free:true,tag:'Культура'},
+    {name:'Дубай Марина',desc:'Набережная с ресторанами и яхтами. Вечерняя прогулка.',price:'Бесплатно',free:true,tag:'Прогулка'},
+    {name:'Palm Jumeirah',desc:'Остров-пальма. Монорельс, Atlantis. Вид с небоскрёбов.',price:'Бесплатно',free:true,tag:'Архитектура'},
+    {name:'Dubai Frame',desc:'Рамка 150м с видом на старый и новый Дубай.',price:'$14',free:false,tag:'Достопримечательность'},
+    {name:'Desert Safari',desc:'Сафари, ужин у костра, верблюды, шоу живота.',price:'$70',free:false,tag:'Природа'},
+    {name:'Miracle Garden',desc:'45 млн цветов. Сезон ноябрь-апрель.',price:'$14',free:false,tag:'Природа'},
+  ],
+  istanbul:[
+    {name:'Айя-София',desc:'Уникальный собор-мечеть. Вход со стороны площади.',price:'Бесплатно',free:true,tag:'Религия'},
+    {name:'Голубая мечеть',desc:'6 минаретов. Закрыта во время намаза.',price:'Бесплатно',free:true,tag:'Религия'},
+    {name:'Гранд Базар',desc:'4000 магазинов. Торгуйтесь смело — минус 40-60%.',price:'Бесплатно',free:true,tag:'Шоппинг'},
+    {name:'Босфор круиз',desc:'Час по проливу. Вид на оба берега — Европа и Азия.',price:'₺80',free:false,tag:'Природа'},
+    {name:'Топкапы',desc:'Дворец Османской империи. Гарем, сокровищница.',price:'₺350',free:false,tag:'История'},
+    {name:'Стамбул пешком: Бейоглу',desc:'Истикляль, Галатская башня, кафе и галереи.',price:'Бесплатно',free:true,tag:'Прогулка'},
+    {name:'Принцевы острова',desc:'Паромом 1.5ч. Без машин, только велосипеды и фаэтоны.',price:'₺100 паром',free:false,tag:'Природа'},
+  ],
+  tokyo:[
+    {name:'Senso-ji Temple (Асакуса)',desc:'Древнейший храм Токио. Ворота Камнаримон. Рынок Накамисэ.',price:'Бесплатно',free:true,tag:'Культура'},
+    {name:'Shibuya Crossing',desc:'Самый оживлённый перекрёсток мира. Площадь Хачико.',price:'Бесплатно',free:true,tag:'Городское'},
+    {name:'Токийская башня',desc:'Оранжевая телебашня. Смотровая площадка 150м.',price:'¥1,200',free:false,tag:'Достопримечательность'},
+    {name:'Tsukiji Outer Market',desc:'Свежайшие суши и морепродукты. Завтрак с 6:00.',price:'Бесплатно',free:true,tag:'Еда'},
+    {name:'Meiji Shrine',desc:'Главный синтоистский храм. Лесной парк в центре города.',price:'Бесплатно',free:true,tag:'Религия'},
+    {name:'TeamLab Planets',desc:'Иммерсивное цифровое искусство. Booking заранее!',price:'¥3,200',free:false,tag:'Искусство'},
+    {name:'Akihabara',desc:'Электроника, аниме, манга. Мекка для tech-фанатов.',price:'Бесплатно',free:true,tag:'Шоппинг'},
+  ],
+  bangkok:[
+    {name:'Ват Пхракэо',desc:'Храм Изумрудного Будды. Закрытые плечи/колени обязательны.',price:'฿500',free:false,tag:'Религия'},
+    {name:'Плавучий рынок',desc:'Damnoen Saduak или Amphawa. Еда прямо с лодки.',price:'฿200 такси',free:false,tag:'Культура'},
+    {name:'Храм Рассвета (Ват Арун)',desc:'Мозаичная пагода у реки. Закат — лучшее время.',price:'฿100',free:false,tag:'Архитектура'},
+    {name:'Чатучак Weekend Market',desc:'8000 торговых точек. Всё что угодно. Только по выходным.',price:'Бесплатно',free:true,tag:'Шоппинг'},
+    {name:'Паттайя',desc:'2ч от Бангкока. Пляжи, острова, Walking Street.',price:'฿120 автобус',free:false,tag:'Пляж'},
+  ],
+  paris:[
+    {name:'Эйфелева башня',desc:'Бронируйте за неделю. Ночью — световое шоу.',price:'€29.40',free:false,tag:'Достопримечательность'},
+    {name:'Лувр',desc:'Мона Лиза, Венера Милосская. Очередь — 2+ часа без брони.',price:'€22',free:false,tag:'Музей'},
+    {name:'Монмартр',desc:'Сакре-Кёр, художники, кафе. Пешком вверх по лестнице.',price:'Бесплатно',free:true,tag:'Прогулка'},
+    {name:'Версаль',desc:'40 мин на RER C. Дворец + сады. Фонтаны по выходным.',price:'€20',free:false,tag:'История'},
+    {name:'Сена круиз (Bateaux)',desc:'1 час по реке с видом на достопримечательности.',price:'€17',free:false,tag:'Прогулка'},
+    {name:'Ночной Марше (рынок)',desc:'Фермерские продукты, уличная еда, местная жизнь.',price:'Бесплатно',free:true,tag:'Еда'},
+  ],
+  bali:[
+    {name:'Рисовые террасы Тегаллаланг',desc:'Природное чудо. Качели над рисом — Instagram.',price:'Бесплатно+donation',free:true,tag:'Природа'},
+    {name:'Храм Танах Лот',desc:'Храм на скале в океане. Закат — обязательно.',price:'Rp60,000',free:false,tag:'Культура'},
+    {name:'Убуд Monkey Forest',desc:'700 обезьян в джунглях. Не держите еду на виду!',price:'Rp80,000',free:false,tag:'Природа'},
+    {name:'Семиньяк / Кута серфинг',desc:'Уроки серфинга с инструктором на пляже Куты.',price:'$25 урок',free:false,tag:'Спорт'},
+    {name:'Убуд арт-рынок',desc:'Ткани, скульптуры, украшения. Торгуйтесь смело.',price:'Бесплатно',free:true,tag:'Шоппинг'},
+  ],
+  georgia:[
+    {name:'Старый город Тбилиси',desc:'Серные бани, Нарикала, пёстрые балконы. Пешком 3 часа.',price:'Бесплатно',free:true,tag:'Культура'},
+    {name:'Канатная дорога Тбилиси',desc:'Вид на весь город. До крепости Нарикала.',price:'Бесплатно',free:true,tag:'Прогулка'},
+    {name:'Гори + Уплисцихе',desc:'Пещерный город I в. до н.э. 1.5ч от Тбилиси.',price:'₾15',free:false,tag:'История'},
+    {name:'Казбеги / Гергети',desc:'Горы, монастырь на высоте 2170м, Военно-Грузинская дорога.',price:'60 GEL такси',free:false,tag:'Природа'},
+    {name:'Вино-тур в Кахетии',desc:'Столица грузинского виноделия. Дегустация, марани.',price:'60 GEL тур',free:false,tag:'Еда'},
+    {name:'Батуми набережная',desc:'Пальмы, фонтаны, казино, Черное море. Свободный вход.',price:'Бесплатно',free:true,tag:'Пляж'},
+  ],
+}
+
+const DEMO_PLACES = [
+  {name:'Café Nomad',type:'☕ Кафе · Бишкек',stars:'★★★★★',emoji:'☕',phone:'+996 700 123456',maps:'https://maps.google.com',ig:'@cafenomad_bishkek'},
+  {name:'Guesthouse Silk Road',type:'🏠 Гостевой дом · Самарканд',stars:'★★★★☆',emoji:'🏠',phone:'+998 90 234567',maps:'https://maps.google.com',ig:'@silkroad_house'},
+  {name:'Seoul Halal BBQ',type:'🍖 Ресторан · Сеул',stars:'★★★★★',emoji:'🍖',phone:'+82 10 3456789',maps:'https://maps.google.com',ig:'@halalbbq_seoul'},
+]
+
+function setLang(l) {
+  lang = l
+  localStorage.setItem('travelism_lang', l)
+  applyLang()
+}
+
+function applyLang() {
+  const L = LANGS[lang] || LANGS.ru
+  const ids = {
+    'nl-profile':'profile','nl-trips':'trips','nl-events':'events','nl-places':'places','nl-contact':'contact',
+    'btn-save':'save','btn-new-trip':'newTrip','btn-add-place':'addPlace',
+    'btn-partnership':'partnership','btn-open-bot':'openBot','btn-send-feedback':'sendFeedback',
+    'lbl-name':'name','lbl-cit':'citizenship','lbl-city':'city',
+    'h-trips':'hTrips','h-trips-sub':'hTripsSub','h-events':'hEvents','h-events-sub':'hEventsSub',
+    'h-places':'hPlaces','h-places-sub':'hPlacesSub',
+    'no-trips-title':'noTrips','no-trips-sub':'noTripsSub',
+    'btn-b2b':'b2b','b2b-desc':'b2bDesc','ct-feedback':'feedback',
+  }
+  for (const [id, key] of Object.entries(ids)) {
+    const el = document.getElementById(id)
+    if (el && L[key]) el.textContent = L[key]
+  }
+  const fb = document.getElementById('inp-feedback')
+  if (fb && L.feedbackPh) fb.placeholder = L.feedbackPh
+  document.dir = lang === 'ar' ? 'rtl' : 'ltr'
+  loadEvents()
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  document.getElementById('page-'+name).classList.add('active')
+  document.getElementById('nav-'+name).classList.add('active')
+  if (name === 'events') loadEvents()
+  if (name === 'places') loadPlaces()
+}
+
+function loadProfile() {
+  const name = profile.name || userName || ''
+  const cit  = profile.citizenship || ''
+  const city = profile.city || ''
+  const pts  = parseInt(profile.points || 0)
+  const trips = parseInt(profile.trips || 0)
+  const countries = parseInt(profile.countries || 0)
+
+  if (name) {
+    document.getElementById('avatar-initials').textContent = name.charAt(0).toUpperCase()
+    document.getElementById('profile-name').textContent = name
+  }
+  if (cit) document.getElementById('profile-citizenship').textContent = cit
+
+  const level = pts < 100 ? '🌱 Новичок' : pts < 500 ? '✈️ Турист' : pts < 2000 ? '🗺 Исследователь' : pts < 5000 ? '🧭 Номад' : pts < 15000 ? '🏆 Travel Master' : '🌍 Global Citizen'
+  document.getElementById('level-badge').textContent = level
+  document.getElementById('stat-pts').textContent = pts
+  document.getElementById('stat-trips').textContent = trips
+  document.getElementById('stat-countries').textContent = countries
+
+  const progress = parseInt(profile.suitcase || 0)
+  document.getElementById('suitcase-pct').textContent = progress + '%'
+  document.getElementById('suitcase-fill').style.width = progress + '%'
+  const steps = ['visa','flight','hotel','pack','ins']
+  const threshold = [15, 30, 45, 70, 90]
+  steps.forEach((s, i) => {
+    if (progress >= threshold[i]) document.getElementById('step-'+s).classList.add('done')
+  })
+
+  if (name) document.getElementById('inp-name').value = name
+  if (cit)  document.getElementById('inp-cit').value = cit
+  if (city) document.getElementById('inp-city').value = city
+  if (profile.lang) { document.getElementById('inp-lang').value = profile.lang; lang = profile.lang }
+}
+
+function saveProfile() {
+  profile.name = document.getElementById('inp-name').value.trim()
+  profile.citizenship = document.getElementById('inp-cit').value
+  profile.city = document.getElementById('inp-city').value.trim()
+  profile.lang = document.getElementById('inp-lang').value
+  profile.points = (parseInt(profile.points) || 0) + 10
+  localStorage.setItem('travelism_profile', JSON.stringify(profile))
+  setLang(profile.lang)
+  loadProfile()
+  if (tg) tg.showAlert('✅ Профиль сохранён! +10 XP')
+  else alert('✅ Профиль сохранён! +10 XP')
+}
+
+function loadEvents() {
+  const city = document.getElementById('events-city')?.value || 'seoul'
+  const events = EVENTS_DB[city] || []
+  const L = LANGS[lang] || LANGS.ru
+  const container = document.getElementById('events-list')
+  if (!container) return
+  container.innerHTML = events.map(e => `
+    <div class="event-item">
+      <div class="event-top">
+        <div class="event-name">${e.name}</div>
+        <div class="event-price ${e.free?'free':'paid'}">${e.price}</div>
+      </div>
+      <div class="event-desc">${e.desc}</div>
+      <span class="event-tag">${e.tag}</span>
+      ${e.free ? '<span class="event-tag" style="color:var(--success);background:#34C75922">✓ Бесплатно</span>' : ''}
+    </div>
+  `).join('')
+}
+
+function loadPlaces() {
+  const container = document.getElementById('places-list')
+  container.innerHTML = DEMO_PLACES.map(p => `
+    <div class="biz-card">
+      <div class="biz-img">${p.emoji}</div>
+      <div class="biz-body">
+        <div class="biz-name">${p.name}</div>
+        <div class="biz-type">${p.type}</div>
+        <div class="biz-stars">${p.stars}</div>
+        <div class="biz-actions">
+          <button class="biz-btn biz-btn-call" onclick="window.location='tel:${p.phone}'">📞 Позвонить</button>
+          <button class="biz-btn biz-btn-map" onclick="window.open('${p.maps}','_blank')">🗺 Карта</button>
+        </div>
+      </div>
+    </div>
+  `).join('')
+}
+
+function newTrip() {
+  if (tg) tg.close()
+  else window.open('https://t.me/Travelismbot', '_blank')
+}
+
+function addPlace() {
+  if (tg) tg.showAlert('Функция добавления мест будет доступна в следующем обновлении. Напишите нам в @travelismofficial')
+  else alert('Функция добавления мест будет доступна в следующем обновлении.')
+}
+
+function openTelegram(username) {
+  window.open('https://t.me/' + username, '_blank')
+}
+
+function openBot() {
+  window.open('https://t.me/Travelismbot', '_blank')
+}
+
+function sendFeedback() {
+  const msg = document.getElementById('inp-feedback').value.trim()
+  if (!msg) return
+  window.open('https://t.me/travelismofficial?text=' + encodeURIComponent(msg), '_blank')
+  document.getElementById('inp-feedback').value = ''
+  if (tg) tg.showAlert('✅ Спасибо за отзыв!')
+  else alert('✅ Спасибо за отзыв!')
+}
+
+loadProfile()
+applyLang()
+loadEvents()
+loadPlaces()
+</script>
+</body>
+</html>
