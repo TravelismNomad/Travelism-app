@@ -50,6 +50,11 @@
   select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3l3 4 3-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
   textarea.inp{resize:none;min-height:90px}
 
+  .chk-row{display:flex;gap:10px;margin-bottom:12px}
+  .chk{flex:1;display:flex;align-items:center;gap:8px;padding:11px 12px;border-radius:var(--rs);border:1px solid var(--brd);background:var(--bg2);cursor:pointer;font-size:13px;font-weight:600}
+  .chk.on{border-color:var(--acc);background:rgba(0,122,255,.1);color:var(--acc)}
+  .chk input{display:none}
+
   .btn{width:100%;padding:14px;border-radius:var(--rs);border:none;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:8px;-webkit-appearance:none}
   .btn:active{opacity:.8}
   .btn-p{background:var(--acc);color:#fff}
@@ -75,18 +80,37 @@
   .biz-body{padding:12px}
   .biz-name{font-size:16px;font-weight:700;margin-bottom:3px}
   .biz-type{font-size:12px;color:var(--tg-theme-hint-color,#999);margin-bottom:6px}
+  .biz-badges{margin-bottom:6px}
+  .biz-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:6px;margin-right:4px;font-weight:600}
+  .bb-halal{background:rgba(52,199,89,.15);color:var(--ok)}
+  .bb-family{background:rgba(0,122,255,.12);color:var(--acc)}
   .biz-stars{color:#FF9500;font-size:13px;margin-bottom:8px}
-  .biz-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .biz-stars .rc{color:var(--tg-theme-hint-color,#999);font-size:11px;margin-left:4px}
+  .biz-acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px}
   .biz-btn{padding:9px 4px;border-radius:var(--rs);border:none;font-size:12px;font-weight:600;cursor:pointer;text-align:center}
   .bc-call{background:var(--ok);color:#fff}
   .bc-map{background:var(--acc);color:#fff}
   .bc-ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
+  .biz-rate{width:100%;padding:9px;border-radius:var(--rs);border:1px solid var(--brd);background:transparent;color:var(--acc);font-size:13px;font-weight:600;cursor:pointer}
 
-  /* Add place form */
+  /* Modals */
   .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end}
   .modal{background:var(--tg-theme-bg-color,#fff);border-radius:20px 20px 0 0;padding:20px 16px max(20px,env(safe-area-inset-bottom));width:100%;max-height:90vh;overflow-y:auto}
   .modal-title{font-size:17px;font-weight:700;margin-bottom:16px;text-align:center}
   .modal-close{position:absolute;right:16px;top:16px;font-size:20px;cursor:pointer;background:none;border:none;color:var(--tg-theme-hint-color,#999)}
+
+  /* Star rating */
+  .stars-pick{display:flex;justify-content:center;gap:8px;margin:8px 0 16px}
+  .star-btn{font-size:34px;cursor:pointer;background:none;border:none;color:var(--brd);transition:.15s}
+  .star-btn.on{color:#FF9500}
+
+  /* Reviews list */
+  .rev{padding:10px 0;border-bottom:0.5px solid var(--brd)}
+  .rev:last-child{border:none}
+  .rev-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+  .rev-name{font-size:13px;font-weight:600}
+  .rev-stars{color:#FF9500;font-size:12px}
+  .rev-text{font-size:13px;color:var(--tg-theme-text-color,#333);line-height:1.4}
 
   /* Contact */
   .cta{background:linear-gradient(135deg,#667eea,#764ba2);border-radius:var(--r);padding:22px;color:#fff;margin-bottom:10px;text-align:center}
@@ -95,6 +119,10 @@
   .cta-sub{font-size:13px;opacity:.85;margin-bottom:18px;line-height:1.5}
   .cta-btn{background:#fff;color:#667eea;padding:13px;border-radius:var(--rs);border:none;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px}
   .cta-outline{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.5);padding:11px;border-radius:var(--rs);width:100%;font-size:14px;font-weight:600;cursor:pointer}
+
+  .empty{text-align:center;padding:30px 10px;color:var(--tg-theme-hint-color,#999)}
+  .empty-ic{font-size:40px;margin-bottom:8px}
+  .spin{text-align:center;padding:20px;color:var(--tg-theme-hint-color,#999);font-size:13px}
 </style>
 </head>
 <body>
@@ -265,7 +293,7 @@
     <div style="font-size:13px;color:var(--tg-theme-hint-color,#999);margin-top:2px" id="h3s">Кафе, отели, досуг</div>
   </div>
   <button class="btn btn-ok" onclick="openAddPlace()" id="btn-add">➕ Добавить своё место</button>
-  <div id="places-list"></div>
+  <div id="places-list"><div class="spin">Загружаю места…</div></div>
 </div>
 
 <!-- Add Place Modal -->
@@ -277,23 +305,46 @@
     <div class="inp-g">
       <label class="inp-l">Тип заведения</label>
       <select class="inp" id="m1">
-        <option value="☕ Кафе / Ресторан">☕ Кафе / Ресторан</option>
-        <option value="🏨 Отель">🏨 Отель</option>
-        <option value="🏠 Гостевой дом">🏠 Гостевой дом</option>
-        <option value="🎭 Досуг / Развлечения">🎭 Досуг / Развлечения</option>
-        <option value="🛍 Магазин / Базар">🛍 Магазин / Базар</option>
-        <option value="🏛 Культура / Музей">🏛 Культура / Музей</option>
-        <option value="🌿 Природа / Активный отдых">🌿 Природа / Активный отдых</option>
-        <option value="🕌 Халяль место">🕌 Халяль место</option>
+        <option value="cafe">☕ Кафе / Ресторан</option>
+        <option value="hotel">🏨 Отель</option>
+        <option value="guesthouse">🏠 Гостевой дом</option>
+        <option value="entertainment">🎭 Досуг / Развлечения</option>
+        <option value="shop">🛍 Магазин / Базар</option>
+        <option value="culture">🏛 Культура / Музей</option>
+        <option value="nature">🌿 Природа / Активный отдых</option>
+        <option value="halal">🕌 Халяль место</option>
       </select>
     </div>
     <div class="inp-g"><label class="inp-l">Город *</label><input class="inp" id="m2" placeholder="Бишкек, Алматы, Самарканд..."></div>
+    <div class="inp-g"><label class="inp-l">Страна *</label><input class="inp" id="m2b" placeholder="Кыргызстан, Казахстан..."></div>
     <div class="inp-g"><label class="inp-l">Телефон *</label><input class="inp" id="m3" type="tel" placeholder="+996 700 000000"></div>
     <div class="inp-g"><label class="inp-l">Ссылка на Google Maps</label><input class="inp" id="m4" placeholder="https://maps.google.com/..."></div>
     <div class="inp-g"><label class="inp-l">Instagram</label><input class="inp" id="m5" placeholder="@yourplace"></div>
     <div class="inp-g"><label class="inp-l">Описание</label><textarea class="inp" id="m6" placeholder="Чем уникально ваше место..."></textarea></div>
-    <button class="btn btn-p" onclick="submitPlace()">📨 Отправить заявку</button>
-    <div style="font-size:11px;color:var(--tg-theme-hint-color,#999);text-align:center;margin-top:4px">Заявка придёт нам в Telegram для проверки</div>
+    <div class="chk-row">
+      <label class="chk" id="chk-halal" onclick="toggleChk('halal')"><input type="checkbox" id="m7">🕌 Халяль</label>
+      <label class="chk" id="chk-family" onclick="toggleChk('family')"><input type="checkbox" id="m8">👨‍👩‍👧 Для семьи</label>
+    </div>
+    <button class="btn btn-p" onclick="submitPlace()" id="btn-submit-place">📨 Отправить на проверку</button>
+    <div style="font-size:11px;color:var(--tg-theme-hint-color,#999);text-align:center;margin-top:4px">Место появится в каталоге после проверки модератором</div>
+  </div>
+</div>
+
+<!-- Review Modal -->
+<div class="modal-bg" id="rmodal" style="display:none" onclick="if(event.target===this)closeReview()">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeReview()">✕</button>
+    <div class="modal-title" id="rmodal-title">Оценить место</div>
+    <div class="stars-pick" id="stars-pick">
+      <button class="star-btn" data-v="1" onclick="pickStar(1)">★</button>
+      <button class="star-btn" data-v="2" onclick="pickStar(2)">★</button>
+      <button class="star-btn" data-v="3" onclick="pickStar(3)">★</button>
+      <button class="star-btn" data-v="4" onclick="pickStar(4)">★</button>
+      <button class="star-btn" data-v="5" onclick="pickStar(5)">★</button>
+    </div>
+    <div class="inp-g"><label class="inp-l">Комментарий (необязательно)</label><textarea class="inp" id="r-text" placeholder="Расскажите о вашем опыте..."></textarea></div>
+    <button class="btn btn-p" onclick="submitReview()" id="btn-submit-rev">⭐ Отправить отзыв</button>
+    <div id="rev-existing" style="margin-top:14px"></div>
   </div>
 </div>
 
@@ -341,7 +392,12 @@
 const tg = window.Telegram?.WebApp
 if(tg){tg.ready();tg.expand()}
 
-const TG_OWNER = 'travelismofficial' // ← замени на свой username
+const API = 'https://travelism-api.onrender.com'
+const TG_OWNER = 'travelismofficial'
+
+function getTgId(){
+  return window.Telegram?.WebApp?.initDataUnsafe?.user?.id || null
+}
 
 const LANGS = {
   ru:{p:'Профиль',t:'Поездки',e:'События',pl:'Места',c:'Связь'},
@@ -431,7 +487,7 @@ const EVS = {
     {n:'Батуми набережная',d:'Пальмы, море, казино.',p:'Бесплатно',f:true,t:'Пляж'},
   ],
   bishkek:[
-    {n:'Ала-Тоо площадь',d:'Центр города. Смена почётного карауна.',p:'Бесплатно',f:true,t:'Культура'},
+    {n:'Ала-Тоо площадь',d:'Центр города. Смена почётного караула.',p:'Бесплатно',f:true,t:'Культура'},
     {n:'Ошский базар',d:'Главный рынок. Национальная еда, специи.',p:'Бесплатно',f:true,t:'Рынок'},
     {n:'Озеро Иссык-Куль',d:'3ч от Бишкека. Горное море.',p:'500 сом транспорт',f:false,t:'Природа'},
     {n:'Ущелье Ала-Арча',d:'40км от города. Трекинг, водопады.',p:'150 сом вход',f:false,t:'Трекинг'},
@@ -480,15 +536,21 @@ const EVS = {
   ],
 }
 
-const PLACES_DB = [
-  {n:'Café Silk Road',t:'☕ Кафе · Бишкек, Кыргызстан',s:'★★★★★',e:'☕',ph:'+996 700 123456',maps:'https://maps.google.com',ig:'@cafesilkroad'},
-  {n:'Guesthouse Nomad',t:'🏠 Гостевой дом · Самарканд, Узбекистан',s:'★★★★☆',e:'🏠',ph:'+998 90 234567',maps:'https://maps.google.com',ig:'@ghnomad'},
-  {n:'Seoul Halal BBQ',t:'🕌 Халяль · Сеул, Корея',s:'★★★★★',e:'🍖',ph:'+82 10 345678',maps:'https://maps.google.com',ig:'@halalbbq'},
-  {n:'Travelism Yurt Camp',t:'🌿 Природа · Иссык-Куль, Кыргызстан',s:'★★★★★',e:'⛺',ph:'+996 555 678901',maps:'https://maps.google.com',ig:'@yurtcamp_kg'},
+// Демо-места (фолбэк, если сервер пуст/спит)
+const PLACES_DEMO = [
+  {id:'demo1',name:'Café Silk Road',category:'cafe',city:'Бишкек',country:'Кыргызстан',rating_avg:5,reviews_count:0,phone:'+996 700 123456',maps_url:'https://maps.google.com',instagram_url:'cafesilkroad',halal_friendly:true,family_friendly:true},
+  {id:'demo2',name:'Guesthouse Nomad',category:'guesthouse',city:'Самарканд',country:'Узбекистан',rating_avg:4,reviews_count:0,phone:'+998 90 234567',maps_url:'https://maps.google.com',instagram_url:'ghnomad',halal_friendly:true,family_friendly:false},
+  {id:'demo3',name:'Seoul Halal BBQ',category:'halal',city:'Сеул',country:'Корея',rating_avg:5,reviews_count:0,phone:'+82 10 345678',maps_url:'https://maps.google.com',instagram_url:'halalbbq',halal_friendly:true,family_friendly:true},
+  {id:'demo4',name:'Travelism Yurt Camp',category:'nature',city:'Иссык-Куль',country:'Кыргызстан',rating_avg:5,reviews_count:0,phone:'+996 555 678901',maps_url:'https://maps.google.com',instagram_url:'yurtcamp_kg',halal_friendly:false,family_friendly:true},
 ]
+
+const CAT_EMOJI = {cafe:'☕',hotel:'🏨',guesthouse:'🏠',entertainment:'🎭',shop:'🛍',culture:'🏛',nature:'🌿',halal:'🕌'}
+const CAT_NAME  = {cafe:'Кафе / Ресторан',hotel:'Отель',guesthouse:'Гостевой дом',entertainment:'Досуг',shop:'Магазин',culture:'Культура',nature:'Природа',halal:'Халяль'}
 
 let lang = localStorage.getItem('tl_lang') || 'ru'
 let prof = JSON.parse(localStorage.getItem('tl_prof') || '{}')
+let chkHalal = false, chkFamily = false
+let currentRating = 0, currentPlaceId = null
 
 function setLang(l) {
   lang = l
@@ -533,6 +595,28 @@ function loadProfile() {
   if(prof.lang){ document.getElementById('ilang').value = prof.lang; setLang(prof.lang) }
 }
 
+// Подтягиваем профиль с сервера (баллы/уровень — единый источник истины)
+async function syncProfileFromServer() {
+  const tgId = getTgId()
+  if (!tgId) return
+  try {
+    const res = await fetch(`${API}/api/profile/${tgId}`)
+    if (!res.ok) return
+    const p = await res.json()
+    if (p && !p.error) {
+      if (p.points != null) prof.points = p.points
+      if (p.trips_count != null) prof.trips = p.trips_count
+      if (p.suitcase_pct != null) prof.suitcase = p.suitcase_pct
+      if (p.first_name) prof.name = p.first_name
+      if (p.citizenship) prof.citizenship = p.citizenship
+      if (p.departure_city) prof.city = p.departure_city
+      if (p.language) prof.lang = p.language
+      localStorage.setItem('tl_prof', JSON.stringify(prof))
+      loadProfile()
+    }
+  } catch (e) { /* сервер спит — показываем локальные данные */ }
+}
+
 async function saveProfile() {
   prof.name = document.getElementById('i0').value.trim()
   prof.phone = document.getElementById('i1').value.trim()
@@ -540,12 +624,10 @@ async function saveProfile() {
   prof.city = document.getElementById('i3').value.trim()
   prof.lang = document.getElementById('ilang').value
 
-  // Сохраняем локально (для мгновенного отображения)
   localStorage.setItem('tl_prof', JSON.stringify(prof))
   setLang(prof.lang)
 
-  // Отправляем на сервер
-  const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+  const tgId = getTgId()
   if (!tgId) {
     if(tg) tg.showAlert('Открой приложение через Telegram, чтобы сохранить профиль')
     else alert('Открой через Telegram')
@@ -562,7 +644,7 @@ async function saveProfile() {
   }
 
   try {
-    const res = await fetch('https://travelism-api.onrender.com/api/profile', {
+    const res = await fetch(`${API}/api/profile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -571,8 +653,7 @@ async function saveProfile() {
     if (data.success) {
       if(tg) tg.showAlert('✅ ' + data.message)
       else alert('✅ ' + data.message)
-      // обновляем баллы с сервера если вернулись
-      loadProfile()
+      syncProfileFromServer()
     } else {
       if(tg) tg.showAlert('⚠️ Не удалось сохранить, попробуй ещё раз')
     }
@@ -598,47 +679,201 @@ function loadEvs() {
   `).join('')
 }
 
-function loadPlaces() {
-  document.getElementById('places-list').innerHTML = PLACES_DB.map(p=>`
+// ===== МЕСТА: загрузка из базы (одобренные), фолбэк на демо =====
+async function loadPlaces() {
+  const wrap = document.getElementById('places-list')
+  wrap.innerHTML = '<div class="spin">Загружаю места…</div>'
+  let places = []
+  try {
+    const res = await fetch(`${API}/api/places`)
+    if (res.ok) {
+      const data = await res.json()
+      places = Array.isArray(data) ? data : (data.places || [])
+    }
+  } catch (e) { /* сервер спит */ }
+
+  // если из базы ничего не пришло — показываем демо, чтобы вкладка не была пустой
+  if (!places || places.length === 0) places = PLACES_DEMO
+
+  wrap.innerHTML = places.map(p => renderPlace(p)).join('')
+}
+
+function renderPlace(p) {
+  const emoji = CAT_EMOJI[p.category] || '📍'
+  const catName = CAT_NAME[p.category] || p.category || ''
+  const rating = Number(p.rating_avg || 0)
+  const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating))
+  const rc = p.reviews_count ? `<span class="rc">(${p.reviews_count})</span>` : '<span class="rc">(нет отзывов)</span>'
+  const phone = (p.phone||'').replace(/'/g,'')
+  const maps = (p.maps_url||'').replace(/'/g,'')
+  const ig = (p.instagram_url||'').replace(/[@'"]/g,'')
+  const pid = String(p.id).replace(/'/g,'')
+  const pname = (p.name||'').replace(/'/g,"\\'")
+  let badges = ''
+  if (p.halal_friendly) badges += '<span class="biz-badge bb-halal">🕌 Халяль</span>'
+  if (p.family_friendly) badges += '<span class="biz-badge bb-family">👨‍👩‍👧 Семья</span>'
+  return `
     <div class="biz">
-      <div class="biz-img">${p.e}</div>
+      <div class="biz-img">${emoji}</div>
       <div class="biz-body">
-        <div class="biz-name">${p.n}</div>
-        <div class="biz-type">${p.t}</div>
-        <div class="biz-stars">${p.s}</div>
+        <div class="biz-name">${p.name||''}</div>
+        <div class="biz-type">${emoji} ${catName} · ${p.city||''}${p.country?', '+p.country:''}</div>
+        ${badges?`<div class="biz-badges">${badges}</div>`:''}
+        <div class="biz-stars">${stars} ${rating?rating.toFixed(1):''} ${rc}</div>
         <div class="biz-acts">
-          <button class="biz-btn bc-call" onclick="window.location='tel:${p.ph}'">📞 Звонок</button>
-          <button class="biz-btn bc-map" onclick="window.open('${p.maps}','_blank')">🗺 Карта</button>
-          <button class="biz-btn bc-ig" onclick="openTG(encodeURIComponent('${p.ig}'))">📸 Insta</button>
+          ${phone?`<button class="biz-btn bc-call" onclick="window.location='tel:${phone}'">📞 Звонок</button>`:''}
+          ${maps?`<button class="biz-btn bc-map" onclick="window.open('${maps}','_blank')">🗺 Карта</button>`:''}
+          ${ig?`<button class="biz-btn bc-ig" onclick="openTG('${ig}')">📸 Insta</button>`:''}
         </div>
+        <button class="biz-rate" onclick="openReview('${pid}','${pname}')">⭐ Оценить / отзывы</button>
       </div>
     </div>
-  `).join('')
+  `
 }
 
 function openAddPlace() { document.getElementById('modal').style.display='flex' }
 function closeModal() { document.getElementById('modal').style.display='none' }
 
-function submitPlace() {
+function toggleChk(which) {
+  if (which==='halal') { chkHalal = !chkHalal; document.getElementById('chk-halal').classList.toggle('on', chkHalal) }
+  if (which==='family') { chkFamily = !chkFamily; document.getElementById('chk-family').classList.toggle('on', chkFamily) }
+}
+
+// ===== МЕСТА: отправка на сервер (статус pending на бэкенде) =====
+async function submitPlace() {
   const name = document.getElementById('m0').value.trim()
-  const type = document.getElementById('m1').value
+  const category = document.getElementById('m1').value
   const city = document.getElementById('m2').value.trim()
+  const country = document.getElementById('m2b').value.trim()
   const phone = document.getElementById('m3').value.trim()
   const maps = document.getElementById('m4').value.trim()
-  const ig = document.getElementById('m5').value.trim()
+  const ig = document.getElementById('m5').value.trim().replace(/^@/,'')
   const desc = document.getElementById('m6').value.trim()
 
-  if(!name || !city || !phone) {
-    if(tg) tg.showAlert('Заполните обязательные поля: Название, Город, Телефон')
+  if(!name || !city || !country || !phone) {
+    if(tg) tg.showAlert('Заполните обязательные поля: Название, Город, Страна, Телефон')
     else alert('Заполните обязательные поля')
     return
   }
 
-  const msg = `🏢 Новое место для Travelism:\n\n📍 ${name}\n🏷 ${type}\n🌆 ${city}\n📞 ${phone}\n🗺 ${maps||'—'}\n📸 ${ig||'—'}\n📝 ${desc||'—'}`
-  window.open(`https://t.me/${TG_OWNER}?text=${encodeURIComponent(msg)}`, '_blank')
-  closeModal()
-  if(tg) tg.showAlert('✅ Заявка отправлена! Мы проверим и добавим.')
-  else alert('✅ Заявка отправлена!')
+  const tgId = getTgId()
+  const payload = {
+    name, category, country, city, phone,
+    instagram_url: ig,
+    maps_url: maps,
+    description: desc,
+    halal_friendly: chkHalal,
+    family_friendly: chkFamily,
+    submitted_by: tgId || 0
+  }
+
+  const btn = document.getElementById('btn-submit-place')
+  btn.textContent = 'Отправляю…'; btn.disabled = true
+
+  try {
+    const res = await fetch(`${API}/api/places`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    if (res.ok) {
+      closeModal()
+      // очистим форму
+      ;['m0','m2','m2b','m3','m4','m5','m6'].forEach(id=>document.getElementById(id).value='')
+      chkHalal=false; chkFamily=false
+      document.getElementById('chk-halal').classList.remove('on')
+      document.getElementById('chk-family').classList.remove('on')
+      if(tg) tg.showAlert('✅ Заявка отправлена! Место появится после проверки.')
+      else alert('✅ Заявка отправлена!')
+    } else {
+      if(tg) tg.showAlert('⚠️ Не удалось отправить. Проверьте поля и попробуйте снова.')
+      else alert('Ошибка отправки')
+    }
+  } catch (e) {
+    if(tg) tg.showAlert('⚠️ Сервер недоступен (просыпается ~50 сек), попробуй через минуту')
+    else alert('Сервер недоступен')
+  } finally {
+    btn.textContent = '📨 Отправить на проверку'; btn.disabled = false
+  }
+}
+
+// ===== ОТЗЫВЫ =====
+async function openReview(placeId, placeName) {
+  currentPlaceId = placeId
+  currentRating = 0
+  document.getElementById('rmodal-title').textContent = placeName || 'Оценить место'
+  document.getElementById('r-text').value = ''
+  document.querySelectorAll('#stars-pick .star-btn').forEach(b=>b.classList.remove('on'))
+  document.getElementById('rev-existing').innerHTML = ''
+  document.getElementById('rmodal').style.display='flex'
+  // подгрузим существующие отзывы (демо-места пропускаем)
+  if (String(placeId).startsWith('demo')) {
+    document.getElementById('rev-existing').innerHTML = '<div class="empty" style="padding:14px"><div style="font-size:12px">Это демо-место. Отзывы появятся для реальных мест из каталога.</div></div>'
+    return
+  }
+  try {
+    const res = await fetch(`${API}/api/places/${placeId}/reviews`)
+    if (res.ok) {
+      const data = await res.json()
+      const list = Array.isArray(data) ? data : (data.reviews || [])
+      if (list.length) {
+        document.getElementById('rev-existing').innerHTML =
+          '<div class="ctitle">Отзывы</div>' + list.map(r=>{
+            const s='★'.repeat(r.rating||0)+'☆'.repeat(5-(r.rating||0))
+            return `<div class="rev"><div class="rev-top"><span class="rev-name">${r.user_name||'Гость'}</span><span class="rev-stars">${s}</span></div>${r.comment?`<div class="rev-text">${r.comment}</div>`:''}</div>`
+          }).join('')
+      }
+    }
+  } catch (e) { /* пропускаем */ }
+}
+function closeReview() { document.getElementById('rmodal').style.display='none' }
+
+function pickStar(v) {
+  currentRating = v
+  document.querySelectorAll('#stars-pick .star-btn').forEach(b=>{
+    b.classList.toggle('on', Number(b.dataset.v) <= v)
+  })
+}
+
+async function submitReview() {
+  if (!currentRating) {
+    if(tg) tg.showAlert('Поставьте оценку звёздами')
+    else alert('Поставьте оценку')
+    return
+  }
+  if (String(currentPlaceId).startsWith('demo')) {
+    if(tg) tg.showAlert('Это демо-место. Оценивать можно реальные места из каталога.')
+    closeReview(); return
+  }
+  const tgId = getTgId()
+  const payload = {
+    place_id: Number(currentPlaceId),
+    telegram_id: tgId || 0,
+    user_name: prof.name || window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || 'Гость',
+    rating: currentRating,
+    comment: document.getElementById('r-text').value.trim()
+  }
+  const btn = document.getElementById('btn-submit-rev')
+  btn.textContent='Отправляю…'; btn.disabled=true
+  try {
+    const res = await fetch(`${API}/api/reviews`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    })
+    if (res.ok) {
+      closeReview()
+      if(tg) tg.showAlert('✅ Спасибо за отзыв!')
+      else alert('✅ Спасибо за отзыв!')
+      loadPlaces()
+    } else {
+      if(tg) tg.showAlert('⚠️ Не удалось отправить отзыв')
+    }
+  } catch (e) {
+    if(tg) tg.showAlert('⚠️ Сервер недоступен, попробуй позже')
+  } finally {
+    btn.textContent='⭐ Отправить отзыв'; btn.disabled=false
+  }
 }
 
 function sendFB() {
@@ -657,7 +892,7 @@ function openBot() { window.open('https://t.me/Travelismbot', '_blank') }
 loadProfile()
 setLang(lang)
 loadEvs()
-loadPlaces()
+syncProfileFromServer()
 </script>
 </body>
 </html>
