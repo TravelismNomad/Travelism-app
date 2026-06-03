@@ -533,18 +533,53 @@ function loadProfile() {
   if(prof.lang){ document.getElementById('ilang').value = prof.lang; setLang(prof.lang) }
 }
 
-function saveProfile() {
+async function saveProfile() {
   prof.name = document.getElementById('i0').value.trim()
   prof.phone = document.getElementById('i1').value.trim()
   prof.citizenship = document.getElementById('i2').value
   prof.city = document.getElementById('i3').value.trim()
   prof.lang = document.getElementById('ilang').value
-  prof.points = (parseInt(prof.points)||0) + 10
+
+  // Сохраняем локально (для мгновенного отображения)
   localStorage.setItem('tl_prof', JSON.stringify(prof))
   setLang(prof.lang)
-  loadProfile()
-  if(tg) tg.showAlert('✅ Профиль сохранён! +10 XP')
-  else alert('✅ Профиль сохранён! +10 XP')
+
+  // Отправляем на сервер
+  const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+  if (!tgId) {
+    if(tg) tg.showAlert('Открой приложение через Telegram, чтобы сохранить профиль')
+    else alert('Открой через Telegram')
+    return
+  }
+
+  const payload = {
+    telegram_id: tgId,
+    first_name: prof.name,
+    phone: prof.phone,
+    citizenship: prof.citizenship,
+    departure_city: prof.city,
+    language: prof.lang
+  }
+
+  try {
+    const res = await fetch('https://travelism-api.onrender.com/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    const data = await res.json()
+    if (data.success) {
+      if(tg) tg.showAlert('✅ ' + data.message)
+      else alert('✅ ' + data.message)
+      // обновляем баллы с сервера если вернулись
+      loadProfile()
+    } else {
+      if(tg) tg.showAlert('⚠️ Не удалось сохранить, попробуй ещё раз')
+    }
+  } catch (e) {
+    if(tg) tg.showAlert('⚠️ Сервер недоступен (просыпается ~50 сек), попробуй через минуту')
+    else alert('Сервер недоступен, попробуй ещё раз')
+  }
 }
 
 function loadEvs() {
