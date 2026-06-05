@@ -1,264 +1,314 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <title>Travelism AI</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --tg-bg: var(--tg-theme-bg-color, #ffffff);
-      --tg-text: var(--tg-theme-text-color, #111827);
-      --tg-secondary: var(--tg-theme-secondary-bg-color, #f9fafb);
-      --tg-button: var(--tg-theme-button-color, #10b981);
-      --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
-    }
-    body {
-      background-color: var(--tg-bg);
-      color: var(--tg-text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .card {
-      background-color: var(--tg-secondary);
-      border-radius: 1.5rem;
-      transition: all 0.2s ease;
-    }
-    .progress-bar {
-      background-color: #e5e7eb;
-      border-radius: 9999px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      background-color: var(--tg-button);
-      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .nav-item.active {
-      color: var(--tg-button);
-      border-bottom: 2px solid var(--tg-button);
-    }
-    .chk-item {
-      background-color: #f3f4f6;
-      border-radius: 2rem;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-    .chk-item.on {
-      background-color: #dcfce7;
-      border-color: #10b981;
-    }
-    .toggle {
-      width: 2.5rem;
-      height: 1.25rem;
-      background-color: #cbd5e1;
-      border-radius: 1rem;
-      position: relative;
-    }
-    .chk-item.on .toggle {
-      background-color: #10b981;
-    }
-    .toggle::after {
-      content: '';
-      width: 1rem;
-      height: 1rem;
-      background: white;
-      border-radius: 50%;
-      position: absolute;
-      top: 0.125rem;
-      left: 0.125rem;
-      transition: transform 0.2s;
-    }
-    .chk-item.on .toggle::after {
-      transform: translateX(1.25rem);
-    }
-    [dir="rtl"] .flex-row { flex-direction: row-reverse; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Travelism AI — Super App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --mint-active: #10b981; /* Тот самый игровой мятный */
+            --mint-light: #ecfdf5;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-main); color: var(--text-primary); padding-bottom: 90px; overflow-x: hidden; }
+        .container { max-width: 500px; margin: 0 auto; padding: 20px 16px; }
+
+        /* Игровой блок багажа (Чемодан Легенды) */
+        .gamification-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        .gamification-banner::after {
+            content: "🎒"; position: absolute; right: -10px; bottom: -10px; font-size: 100px; opacity: 0.08;
+        }
+        .suit-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .suit-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+        .suit-badge { background: var(--mint-active); color: #0f172a; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 700; }
+        .progress-track { background: rgba(255,255,255,0.1); height: 10px; border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+        .progress-bar { background: var(--mint-active); height: 100%; width: 0%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .suit-desc { font-size: 13px; color: #94a3b8; }
+
+        /* Стильные скругленные карточки */
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        .card-title { font-size: 18px; font-weight: 700; margin-bottom: 14px; letter-spacing: -0.4px; }
+
+        /* Категории и Цели поездки (Горизонтальный скролл) */
+        .categories-scroll {
+            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;
+            scrollbar-width: none; -webkit-overflow-scrolling: touch;
+        }
+        .categories-scroll::-webkit-scrollbar { display: none; }
+        .cat-chip {
+            background: white; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 40px;
+            font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .cat-chip.active { background: var(--text-primary); color: white; border-color: var(--text-primary); }
+
+        /* Поля ввода и тумблеры */
+        .inp-g { margin-bottom: 16px; }
+        .inp-l { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select, textarea {
+            width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 16px;
+            font-size: 16px; color: var(--text-primary); background: #f8fafc; transition: all 0.2s ease;
+        }
+        input:focus { outline: none; border-color: var(--mint-active); background: white; }
+
+        /* Мятные переключатели игрового режима */
+        .chk-row { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .chk-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #f8fafc; padding: 14px 16px; border-radius: 16px; border: 1px solid #e2e8f0; cursor: pointer;
+        }
+        .chk-item.on { background: var(--mint-light); border-color: var(--mint-active); }
+        .toggle-switch {
+            width: 44px; height: 24px; background: #cbd5e1; border-radius: 20px; position: relative; transition: background 0.3s;
+        }
+        .chk-item.on .toggle-switch { background: var(--mint-active); }
+        .toggle-switch::after {
+            content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+            background: white; top: 3px; left: 3px; transition: transform 0.3s;
+        }
+        .chk-item.on .toggle-switch::after { transform: translateX(20px); }
+
+        /* Дорогая мятная кнопка */
+        .btn-p {
+            background: var(--mint-active); color: #0f172a; width: 100%; border: none;
+            padding: 16px; border-radius: 40px; font-size: 16px; font-weight: 700;
+            cursor: pointer; box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25); transition: transform 0.1s;
+        }
+        .btn-p:active { transform: scale(0.98); }
+
+        /* Нижнее меню (Kaspi-стиль) */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px); border-top: 1px solid #e2e8f0; display: flex;
+            justify-content: space-around; padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.03); z-index: 1000;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            background: none; border: none; font-size: 11px; font-weight: 600; color: #94a3b8; cursor: pointer;
+        }
+        .nav-item.active { color: var(--text-primary); }
+        .nav-icon { font-size: 22px; transition: transform 0.2s; }
+        .nav-item.active .nav-icon { transform: translateY(-2px); }
+
+        /* Список заведений */
+        .place-item { border-left: 5px solid var(--mint-active); }
+        .place-header { display: flex; justify-content: space-between; font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+        .place-stars { color: #f59e0b; font-size: 14px; }
+        .badge-row { display: flex; gap: 6px; margin: 8px 0; }
+        .badge { background: #f1f5f9; color: var(--text-secondary); padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 600; }
+        .badge.halal { background: #dcfce7; color: #15803d; }
+        
+        .hidden { display: none; }
+    </style>
 </head>
-<body class="max-w-md mx-auto pb-20">
-  <div class="px-4 pt-4">
-    <!-- Gamification banner -->
-    <div class="bg-gradient-to-r from-gray-800 to-gray-900 rounded-2xl p-4 mb-4 text-white">
-      <div class="flex justify-between items-center mb-2">
-        <span class="font-bold text-lg">🧳 <span data-i18n="suitcase_title">Чемодан Легенды</span></span>
-        <span id="suitcase-percent" class="text-sm bg-white/20 px-2 py-0.5 rounded-full">0%</span>
-      </div>
-      <div class="progress-bar h-2">
-        <div id="suitcase-fill" class="progress-fill h-full w-0"></div>
-      </div>
-      <p class="text-xs text-gray-300 mt-2" data-i18n="suitcase_desc">Заполните профиль и включите режимы</p>
-    </div>
+<body>
 
-    <!-- Страницы -->
-    <div id="page-profile" class="page">
-      <div class="card p-5 mb-4">
-        <h2 class="text-xl font-bold mb-4" data-i18n="profile_title">👤 Твой профиль</h2>
-        <div class="space-y-3">
-          <input type="text" id="prof-name" placeholder="Имя" class="w-full p-3 rounded-xl border border-gray-200 bg-white dark:bg-gray-800">
-          <input type="text" id="prof-city" placeholder="Город вылета (Бишкек)" class="w-full p-3 rounded-xl border border-gray-200">
-          <input type="text" id="prof-citizenship" placeholder="Гражданство (Kyrgyzstan)" class="w-full p-3 rounded-xl border border-gray-200">
-          <select id="prof-lang" class="w-full p-3 rounded-xl border border-gray-200">
-            <option value="ru">🇷🇺 Русский</option><option value="en">🇬🇧 English</option>
-            <option value="ky">🇰🇬 Кыргызча</option><option value="ar">🇸🇦 العربية</option>
-            <option value="zh">🇨🇳 中文</option><option value="ko">🇰🇷 한국어</option>
-            <option value="tr">🇹🇷 Türkçe</option><option value="de">🇩🇪 Deutsch</option>
-          </select>
-          <div>
-            <label class="font-semibold block mb-2" data-i18n="travel_modes">Режимы путешествия</label>
-            <div class="space-y-2">
-              <div class="chk-item flex justify-between items-center p-3" id="mode-halal" onclick="toggleMode('halal')">
-                <span>🕌 Халяль</span><div class="toggle"></div>
-              </div>
-              <div class="chk-item flex justify-between items-center p-3" id="mode-family" onclick="toggleMode('family')">
-                <span>👨‍👩‍👧 Семья</span><div class="toggle"></div>
-              </div>
-              <div class="chk-item flex justify-between items-center p-3" id="mode-senior" onclick="toggleMode('senior')">
-                <span>👴 Пожилые</span><div class="toggle"></div>
-              </div>
+    <div class="container">
+        <div class="gamification-banner">
+            <div class="suit-header">
+                <div class="suit-title" id="lbl-suitcase-title">Чемодан Легенды</div>
+                <div class="suit-badge"><span id="val-xp">0</span> XP</div>
             </div>
-          </div>
-          <button onclick="saveProfile()" class="w-full bg-emerald-500 text-white font-bold py-3 rounded-full mt-2" data-i18n="save_btn">💾 Сохранить</button>
+            <div class="progress-track">
+                <div class="progress-bar" id="suit-progress"></div>
+            </div>
+            <div class="suit-desc" id="lbl-suitcase-desc">Заполните профиль, чтобы подготовить багаж к вылету.</div>
         </div>
-      </div>
-      <div class="card p-5">
-        <h3 class="font-bold mb-2" data-i18n="stats_title">📊 Статистика</h3>
-        <p><span data-i18n="points_label">🏆 Баллы:</span> <span id="stats-points">0</span></p>
-        <p><span data-i18n="level_label">🎯 Уровень:</span> <span id="stats-level">🌱 Новичок</span></p>
-      </div>
+
+        <div id="screen-profile" class="screen">
+            <div class="card">
+                <div class="card-title">👤 Личные данные</div>
+                <div class="inp-g">
+                    <label class="inp-l">Ваше имя</label>
+                    <input type="text" id="prof-name" placeholder="Введите имя">
+                </div>
+                <div class="inp-g">
+                    <label class="inp-l">Город вылета</label>
+                    <input type="text" id="prof-city" placeholder="Например, Бишкек">
+                </div>
+                <div class="inp-g">
+                    <label class="inp-l">Гражданство</label>
+                    <input type="text" id="prof-citizenship" placeholder="Kyrgyzstan">
+                </div>
+                <div class="inp-g">
+                    <label class="inp-l">Язык интерфейса</label>
+                    <select id="prof-lang" onchange="changeLanguage(this.value)">
+                        <option value="ru">Русский</option>
+                        <option value="ky">Кыргызча</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🕌 Режимы супераппа</div>
+                <div class="chk-row">
+                    <div class="chk-item" id="mode-halal" onclick="toggleMode('halal')">
+                        <span>🕌 Халяль-стандарт (Мечети и еда)</span>
+                        <div class="toggle-switch"></div>
+                    </div>
+                    <div class="chk-item" id="mode-family" onclick="toggleMode('family')">
+                        <span>👨‍👩‍👧 Семейный режим (Детские зоны)</span>
+                        <div class="toggle-switch"></div>
+                    </div>
+                    <div class="chk-item" id="mode-senior" onclick="toggleMode('senior')">
+                        <span>👴 Доступность (Для пожилых)</span>
+                        <div class="toggle-switch"></div>
+                    </div>
+                </div>
+                <button class="btn-p" style="margin-top: 20px;" onclick="saveProfile()">💾 Сохранить профиль</button>
+            </div>
+        </div>
+
+        <div id="screen-places" class="screen hidden">
+            <div class="categories-scroll">
+                <div class="cat-chip active">Все места 📍</div>
+                <div class="cat-chip">Шопинг 🛍️</div>
+                <div class="cat-chip">Фуд-тур 🍜</div>
+                <div class="cat-chip">Горы & Озера ⛰️</div>
+                <div class="cat-chip">Экстрим ⚡</div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🏪 Локальный маркетплейс</div>
+                <div id="places-container">Загрузка одобренных мест...</div>
+            </div>
+        </div>
     </div>
 
-    <div id="page-places" class="page hidden">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-xl font-bold" data-i18n="places_title">📍 Каталог мест</h2>
-        <button onclick="openAddPlaceModal()" class="bg-emerald-500 text-white px-4 py-2 rounded-full text-sm" data-i18n="add_place_btn">➕ Добавить</button>
-      </div>
-      <div id="places-list" class="space-y-3"></div>
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('profile')">
+            <div class="nav-icon">👤</div>
+            <span>Профиль</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('places')">
+            <div class="nav-icon">📍</div>
+            <span>Места</span>
+        </button>
     </div>
-  </div>
 
-  <!-- Нижнее меню -->
-  <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 flex justify-around py-2">
-    <button class="nav-item active flex flex-col items-center py-1 px-4" data-tab="profile"><span class="text-xl">👤</span><span class="text-xs" data-i18n="tab_profile">Профиль</span></button>
-    <button class="nav-item flex flex-col items-center py-1 px-4" data-tab="places"><span class="text-xl">📍</span><span class="text-xs" data-i18n="tab_places">Места</span></button>
-  </div>
+    <script>
+        const API_BASE = 'https://travelism-api.onrender.com';
+        const tg = window.Telegram?.WebApp;
+        
+        let modeHalal = false;
+        let modeFamily = false;
+        let modeSenior = false;
+        let userXp = 120;
 
-  <!-- Модалка добавления места (упрощённая) -->
-  <div id="addPlaceModal" class="fixed inset-0 bg-black/50 flex items-center justify-center hidden z-20 p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-md">
-      <h3 class="font-bold text-lg mb-3" data-i18n="add_place_title">🏪 Новое место</h3>
-      <input type="text" id="new-name" placeholder="Название" class="w-full p-2 border rounded mb-2"><input type="text" id="new-city" placeholder="Город" class="w-full p-2 border rounded mb-2"><input type="text" id="new-country" placeholder="Страна" class="w-full p-2 border rounded mb-2"><input type="text" id="new-phone" placeholder="Телефон" class="w-full p-2 border rounded mb-2"><textarea id="new-desc" placeholder="Описание" class="w-full p-2 border rounded mb-2"></textarea>
-      <div class="flex gap-2 mb-3"><label><input type="checkbox" id="new-halal"> 🕌 Халяль</label><label><input type="checkbox" id="new-family"> 👨‍👩‍👧 Семья</label></div>
-      <button onclick="submitPlace()" class="bg-emerald-500 text-white w-full py-2 rounded-full" data-i18n="submit_btn">Отправить</button>
-      <button onclick="closeAddPlaceModal()" class="w-full mt-2 text-gray-500">Отмена</button>
-    </div>
-  </div>
+        if (tg) { tg.ready(); tg.expand(); }
 
-  <script>
-    const tg = window.Telegram.WebApp; tg.ready(); tg.expand();
-    let tgId = tg.initDataUnsafe?.user?.id || 193532693;
-    let modeHalal=false, modeFamily=false, modeSenior=false;
-    let points=0, suitcase=0;
+        function switchTab(tab) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`screen-${tab}`).classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+            
+            if (tab === 'places') loadPlaces();
+        }
 
-    async function loadProfile() {
-      try {
-        const res = await fetch(`https://travelism-api.onrender.com/api/profile/${tgId}`);
-        const p = await res.json();
-        document.getElementById('prof-name').value = p.full_name || '';
-        document.getElementById('prof-city').value = p.departure_city || '';
-        document.getElementById('prof-citizenship').value = p.citizenship || '';
-        document.getElementById('prof-lang').value = p.user_language || 'ru';
-        modeHalal = p.halal_mode || false; modeFamily = p.family_mode || false; modeSenior = p.senior_mode || false;
-        document.getElementById('mode-halal').classList.toggle('on', modeHalal);
-        document.getElementById('mode-family').classList.toggle('on', modeFamily);
-        document.getElementById('mode-senior').classList.toggle('on', modeSenior);
-        points = p.points || 0;
-        document.getElementById('stats-points').innerText = points;
+        function toggleMode(type) {
+            if (type === 'halal') { modeHalal = !modeHalal; document.getElementById('mode-halal').classList.toggle('on', modeHalal); }
+            if (type === 'family') { modeFamily = !modeFamily; document.getElementById('mode-family').classList.toggle('on', modeFamily); }
+            if (type === 'senior') { modeSenior = !modeSenior; document.getElementById('mode-senior').classList.toggle('on', modeSenior); }
+            updateSuitcase();
+        }
+
+        function updateSuitcase() {
+            let pct = 10;
+            if (document.getElementById('prof-name').value) pct += 30;
+            if (modeHalal) pct += 20;
+            if (modeFamily) pct += 20;
+            if (modeSenior) pct += 20;
+            if (pct > 100) pct = 100;
+            
+            document.getElementById('suit-progress').style.width = `${pct}%`;
+            document.getElementById('val-xp').innerText = userXp;
+        }
+
+        async function saveProfile() {
+            const payload = {
+                telegram_id: tg?.initDataUnsafe?.user?.id || 193532693,
+                first_name: document.getElementById('prof-name').value,
+                departure_city: document.getElementById('prof-city').value,
+                citizenship: document.getElementById('prof-citizenship').value,
+                language: document.getElementById('prof-lang').value,
+                halal_mode: modeHalal,
+                family_mode: modeFamily,
+                senior_mode: modeSenior
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/api/profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('✅ Экосистема синхронизирована! Профиль сохранен в Supabase.');
+                    userXp += 25;
+                    updateSuitcase();
+                }
+            } catch (e) {
+                alert('Ошибка соединения с Render API');
+            }
+        }
+
+        async function loadPlaces() {
+            const container = document.getElementById('places-container');
+            try {
+                const res = await fetch(`${API_BASE}/api/places`);
+                const data = await res.json();
+                if (!data.length) {
+                    container.innerHTML = '<p style="color:var(--text-secondary)">Одобренных мест пока нет.</p>';
+                    return;
+                }
+                container.innerHTML = data.map(p => `
+                    <div class="card place-item" style="padding:14px; margin-bottom:10px;">
+                        <div class="place-header">
+                            <span>${p.name}</span>
+                            <span class="place-stars">★ ${p.rating_avg || '5.0'}</span>
+                        </div>
+                        <p style="font-size:13px; color:var(--text-secondary)">${p.city}, ${p.country}</p>
+                        <p style="font-size:14px; margin-top:6px;">${p.description || ''}</p>
+                        <div class="badge-row">
+                            ${p.halal_supported ? '<span class="badge halal">¼Р  Halal</span>' : ''}
+                            ${p.family_supported ? '<span class="badge">👨‍👩‍👧 Family</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = '<p style="color:red">Не удалось загрузить каталог мест.</p>';
+            }
+        }
+
+        document.querySelectorAll('input').forEach(i => i.addEventListener('input', updateSuitcase));
         updateSuitcase();
-      } catch(e) { console.error(e); }
-    }
-
-    function updateSuitcase() {
-      let prog = 10;
-      if (document.getElementById('prof-name').value) prog += 20;
-      if (document.getElementById('prof-city').value) prog += 20;
-      if (modeHalal) prog += 20;
-      if (modeFamily) prog += 20;
-      if (modeSenior) prog += 20;
-      prog = Math.min(prog, 100);
-      suitcase = prog;
-      document.getElementById('suitcase-fill').style.width = prog+'%';
-      document.getElementById('suitcase-percent').innerText = prog+'%';
-    }
-
-    async function saveProfile() {
-      const payload = {
-        telegram_id: tgId,
-        first_name: document.getElementById('prof-name').value,
-        departure_city: document.getElementById('prof-city').value,
-        citizenship: document.getElementById('prof-citizenship').value,
-        language: document.getElementById('prof-lang').value,
-        halal_mode: modeHalal, family_mode: modeFamily, senior_mode: modeSenior
-      };
-      await fetch('https://travelism-api.onrender.com/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      tg.showAlert('✅ Профиль сохранён');
-      loadProfile();
-    }
-
-    async function loadPlaces() {
-      const res = await fetch('https://travelism-api.onrender.com/api/places');
-      const data = await res.json();
-      document.getElementById('places-list').innerHTML = data.map(p => `
-        <div class="card p-4">
-          <div class="flex justify-between"><span class="font-bold">${p.name}</span><span>⭐ ${p.rating_avg || '0'}</span></div>
-          <div class="text-sm text-gray-500">${p.city}, ${p.country} • ${p.category}</div>
-          <div class="flex gap-2 mt-2">${p.contact_phone ? `<a href="tel:${p.contact_phone}" class="text-green-600">📞</a>` : ''}<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.city+' '+p.country)}" target="_blank" class="text-blue-600">🗺</a></div>
-          <div class="text-xs mt-1">${p.halal_friendly ? '🕌 Халяль ' : ''}${p.family_friendly ? '👨‍👩‍👧 Семья ' : ''}</div>
-        </div>
-      `).join('');
-    }
-
-    function toggleMode(m) {
-      if(m==='halal'){ modeHalal=!modeHalal; document.getElementById('mode-halal').classList.toggle('on', modeHalal); }
-      if(m==='family'){ modeFamily=!modeFamily; document.getElementById('mode-family').classList.toggle('on', modeFamily); }
-      if(m==='senior'){ modeSenior=!modeSenior; document.getElementById('mode-senior').classList.toggle('on', modeSenior); }
-      updateSuitcase();
-    }
-
-    let placesData = [];
-    function openAddPlaceModal() { document.getElementById('addPlaceModal').classList.remove('hidden'); }
-    function closeAddPlaceModal() { document.getElementById('addPlaceModal').classList.add('hidden'); }
-    async function submitPlace() {
-      const payload = {
-        name: document.getElementById('new-name').value,
-        city: document.getElementById('new-city').value,
-        country: document.getElementById('new-country').value,
-        phone: document.getElementById('new-phone').value,
-        description: document.getElementById('new-desc').value,
-        halal_friendly: document.getElementById('new-halal').checked,
-        family_friendly: document.getElementById('new-family').checked,
-        submitted_by: tgId
-      };
-      await fetch('https://travelism-api.onrender.com/api/places', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      closeAddPlaceModal();
-      tg.showAlert('✅ Заявка отправлена');
-      loadPlaces();
-    }
-
-    // tabs
-    document.querySelectorAll('.nav-item').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.getAttribute('data-tab');
-        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-        document.getElementById(`page-${tab}`).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        btn.classList.add('active');
-        if(tab==='places') loadPlaces();
-      });
-    });
-
-    document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateSuitcase));
-    loadProfile();
-    loadPlaces();
-    // i18n stub (у тебя уже есть, но для краткости оставляем)
-  </script>
+    </script>
 </body>
 </html>
